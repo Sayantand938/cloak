@@ -1,0 +1,32 @@
+{
+  "name": "cloak",
+  "version": "1.0.0",
+  "description": "In-memory encrypted environment variable manager",
+  "main": "cli.js",
+  "type": "module",
+  "bin": {
+    "cloak": "./bin/cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@12.6.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.6.0",
+      "onFail": "download"
+    }
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.7.2",
+    "axios": "^1.20.0",
+    "commander": "^15.0.0",
+    "dotenv": "^18.0.4",
+    "js-yaml": "^5.4.2",
+    "picocolors": "^1.1.1"
+  }
+}
