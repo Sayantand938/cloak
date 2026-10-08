@@ -1,0 +1,11 @@
+# Exclude development and CI artifacts from the npm package
+test/
+node_modules/
+.git/
+.github/
+.pnpm-store
+*.tgz
+.DS_Store
+Thumbs.db
+reset-git.bat
+pnpm-lock.yaml

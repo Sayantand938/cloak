@@ -1,118 +1,170 @@
-# cloak
+<div align="center">
 
-A lightweight CLI tool to encrypt your `.env` files into a secure `.env.enc` file (using AES-256-GCM) and inject those secrets directly into your application's RAM—without ever writing decrypted secrets back to disk.
+  # 🧥 cloak
+
+  **AES-256-GCM encrypted `.env` file manager**  
+  *Seal secrets. Inject in RAM. Never touch disk.*
+
+  [![npm version](https://img.shields.io/npm/v/cloak.svg)](https://www.npmjs.com/package/cloak)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+  [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](package.json)
+  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/SayantanD938/cloak/pulls)
+
+</div>
 
 ---
 
-## 🚀 Quick Start Guide
+**cloak** is a lightweight CLI tool that encrypts your `.env` files into a secure `.env.enc` blob (using **AES-256-GCM**) and injects those secrets directly into your application's RAM — **without ever writing decrypted secrets back to disk**.
 
-### 1. Initialize your Master Key
+- ✅ **Zero-disk plaintext** — secrets are decrypted in-memory only.
+- ✅ **Authenticated encryption** — AES-256-GCM detects tampering.
+- ✅ **CI/CD ready** — provide a master key via `$ENV_KEY`.
+- ✅ **Git-friendly** — commit `.env.enc` safely, delete `.env`.
+- ✅ **No config server required** — works offline, single binary.
 
-Run this once on your machine to generate a secure master key. It will be saved automatically to `~/.env-encrypter.json`.
+---
+
+## 📦 Installation
 
 ```bash
-env-encrypter init
+npm install -g cloak
+# or
+pnpm add -g cloak
 ```
 
-> ⚠️ **Important:** Back up this key somewhere safe (e.g., password manager). If you lose it, your encrypted files cannot be recovered.
+> **Requirements**: Node.js 18+
 
 ---
+
+## 🚀 Quick Start
+
+### 1. Initialize a Master Key
+
+```bash
+cloak init
+```
+
+This generates a secure 256-bit key and saves it to `~/.env-encrypter.json`.
+
+> ⚠️ **Back up this key** somewhere safe (e.g., a password manager). If you lose it, your encrypted files **cannot** be recovered.
 
 ### 2. Seal (Encrypt) Your `.env` File
 
-Encrypt your existing `.env` file into a secure `.env.enc` file:
-
 ```bash
-env-encrypter seal
+cloak seal
 ```
 
-* Defaults to reading `.env` and outputting `.env.enc`.
-* Custom paths:
-  ```bash
-  env-encrypter seal -f .env.production -o .env.production.enc
-  ```
+This reads `.env` and creates `.env.enc`. Now you can commit `.env.enc` and delete (or `.gitignore`) the plain `.env`.
 
-Once encrypted, you can safely commit `.env.enc` to Git and delete or `.gitignore` your plain `.env`.
-
----
-
-### 3. Run Your Application with Decrypted Secrets
-
-Run any command or start your app. Secrets are decrypted **in RAM only** and injected into the process environment:
+Custom paths:
 
 ```bash
-env-encrypter run -- node server.js
+cloak seal -f .env.production -o .env.production.enc
 ```
+
+### 3. Run Your App with Secrets Injected
 
 ```bash
-env-encrypter run -- npm run dev
+cloak run -- node server.js
+cloak run -- npm run dev
 ```
 
-* Custom encrypted file:
-  ```bash
-  env-encrypter run -f .env.production.enc -- npm start
-  ```
+Secrets are decrypted **in RAM only** and injected into `process.env` for the child process.
 
----
-
-### 4. View Secrets in Terminal (`reveal`)
-
-Print the decrypted contents of `.env.enc` directly in your terminal:
+### 4. View Secrets (Reveal)
 
 ```bash
-env-encrypter reveal
+cloak reveal
 ```
 
-* Custom file:
-  ```bash
-  env-encrypter reveal -f .env.staging.enc
-  ```
+Prints the decrypted contents of `.env.enc` to your terminal.
 
----
-
-### 5. Add or Update a Variable Directly (`set`)
-
-Modify or add a variable inside the encrypted file without decrypting it manually:
+### 5. Modify a Secret (Set)
 
 ```bash
-env-encrypter set PORT 3000
-env-encrypter set DATABASE_URL "postgres://user:pass@localhost:5432/db"
+cloak set PORT 3000
+cloak set DATABASE_URL "postgres://user:pass@localhost:5432/db"
 ```
 
----
+Add or update a variable directly inside the encrypted file without manual decrypt/re-encrypt cycles.
 
-### 6. Forget / Remove Local Key
-
-Remove the local master key configuration file (`~/.env-encrypter.json`):
+### 6. Forget the Local Key
 
 ```bash
-env-encrypter forget
+cloak forget
 ```
+
+Deletes the local master key configuration file. You'll need to provide the key via `$ENV_KEY` or interactive prompt going forward.
 
 ---
 
 ## 🔑 How Master Keys Are Loaded
 
-When running commands that require decryption or encryption, `env-encrypter` looks for the master key in the following order:
+cloak resolves the master key in this priority order:
 
-1. **`~/.env-encrypter.yaml`** (if present)
-2. **`~/.env-encrypter.json`** (created by `init`)
-3. **`ENV_KEY` environment variable** (useful for CI/CD or production servers):
-   ```bash
-   export ENV_KEY="your_master_key_here"
-   env-encrypter run -- npm start
-   ```
-4. **Interactive Prompt:** If no key is found automatically, it will prompt you to enter the key in the terminal.
+| Priority | Source | Example |
+|---------|--------|---------|
+| 1 | `~/.env-encrypter.yaml` | `master_key: "your-key"` |
+| 2 | `~/.env-encrypter.json` | `{"master_key": "your-key"}` (created by `init`) |
+| 3 | `$ENV_KEY` environment variable | `export ENV_KEY="your-master-key-here"` |
+| 4 | Interactive prompt | Falls back if none of the above are found |
+
+The `$ENV_KEY` approach is ideal for CI/CD pipelines and production servers:
+
+```bash
+export ENV_KEY="your-key"
+cloak run -- npm start
+```
 
 ---
 
-## 📋 Command Summary
+## 📋 Command Reference
 
 | Command | Description |
-| :--- | :--- |
-| `env-encrypter init` | Generate a master key and save it locally |
-| `env-encrypter seal` | Encrypt a plain `.env` into `.env.enc` |
-| `env-encrypter run -- <cmd>` | Inject secrets in-memory and execute a command |
-| `env-encrypter reveal` | Print decrypted secrets to the console |
-| `env-encrypter set <KEY> <VALUE>` | Add/update a secret directly in `.env.enc` |
-| `env-encrypter forget` | Delete the local saved key config |
+|---------|-------------|
+| `cloak init [--force]` | Generate a master key and save it locally |
+| `cloak seal [-f <input>] [-o <output>]` | Encrypt a `.env` into `.env.enc` |
+| `cloak run [-f <file>] -- <cmd>` | Inject secrets in-memory and execute a command |
+| `cloak reveal [-f <file>]` | Print decrypted secrets to the console |
+| `cloak set <KEY> <VALUE> [-f <file>]` | Add/update a secret directly in `.env.enc` |
+| `cloak forget` | Delete the local saved key config |
+
+---
+
+## 🔒 Security
+
+- **Algorithm**: AES-256-GCM (authenticated encryption with associated data).
+- **Key derivation**: PBKDF2 with 100,000 iterations of SHA-256.
+- **Per‑encryption salt & IV**: A random 16‑byte salt and 12‑byte IV are generated for every `seal` and `set` operation.
+- **Auth tag**: GCM authentication tag verified on every `decrypt` — tampered ciphertexts are rejected.
+- **In-memory only**: Decrypted secrets are never written to disk. They exist only in the child process's RAM.
+
+---
+
+## 🧪 Development
+
+```bash
+git clone https://github.com/SayantanD938/cloak.git
+cd cloak
+pnpm install
+pnpm start --help
+```
+
+Run tests:
+
+```bash
+pnpm test
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!  
+Feel free to check the [issues page](https://github.com/SayantanD938/cloak/issues).
+
+---
+
+## 📄 License
+
+This project is [MIT](LICENSE) licensed.
